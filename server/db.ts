@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, documents, analyses, financialMetrics } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,156 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+/**
+ * Document Management Queries
+ */
+
+export async function createDocument(
+  userId: number,
+  fileName: string,
+  fileKey: string,
+  fileUrl: string,
+  fileSize: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(documents).values({
+    userId,
+    fileName,
+    fileKey,
+    fileUrl,
+    fileSize,
+    status: "pending",
+  });
+
+  return result;
+}
+
+export async function getDocumentsByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.select().from(documents).where(eq(documents.userId, userId)).orderBy(desc(documents.uploadedAt));
+}
+
+export async function getDocumentById(documentId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
+    .limit(1);
+
+  return result[0];
+}
+
+export async function updateDocumentStatus(
+  documentId: number,
+  status: "pending" | "processing" | "completed" | "failed",
+  errorMessage?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .update(documents)
+    .set({
+      status,
+      errorMessage: errorMessage || null,
+    })
+    .where(eq(documents.id, documentId));
+}
+
+/**
+ * Analysis Queries
+ */
+
+export async function createAnalysis(documentId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(analyses).values({
+    documentId,
+    userId,
+    analysisStatus: "pending",
+  });
+
+  return result;
+}
+
+export async function getAnalysisByDocumentId(documentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(analyses)
+    .where(eq(analyses.documentId, documentId))
+    .limit(1);
+
+  return result[0];
+}
+
+export async function updateAnalysis(
+  analysisId: number,
+  data: {
+    extractedText?: string;
+    executiveSummary?: string;
+    analysisStatus?: "pending" | "completed" | "failed";
+    analysisError?: string;
+    analyzedAt?: Date;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.update(analyses).set(data).where(eq(analyses.id, analysisId));
+}
+
+/**
+ * Financial Metrics Queries
+ */
+
+export async function createFinancialMetric(
+  analysisId: number,
+  documentId: number,
+  userId: number,
+  metricName: string,
+  metricValue: string,
+  metricUnit?: string,
+  metricYear?: string,
+  confidence?: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.insert(financialMetrics).values({
+    analysisId,
+    documentId,
+    userId,
+    metricName,
+    metricValue,
+    metricUnit,
+    metricYear,
+    confidence,
+  });
+}
+
+export async function getMetricsByAnalysisId(analysisId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.select().from(financialMetrics).where(eq(financialMetrics.analysisId, analysisId));
+}
+
+export async function getMetricsByDocumentId(documentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.select().from(financialMetrics).where(eq(financialMetrics.documentId, documentId));
+}
+
+// TODO: add more feature queries here as your schema grows.
