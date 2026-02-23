@@ -16,19 +16,17 @@ jobs:
     - name: Install pnpm
       uses: pnpm/action-setup@v4
       with:
-        version: 9 # Matches your 157-file project setup
+        # Leaving version empty lets it read v10.4.1 from your package.json automatically
+        run_install: false
 
     - name: Use Node.js 20
       uses: actions/setup-node@v4
       with:
         node-version: 20
-        # We are turning off the cache temporarily to avoid lockfile errors
-        cache: '' 
+        cache: 'pnpm'
 
     - name: Install dependencies
-      # This flag is the "magic" that fixes most pnpm CI failures
-      run: pnpm install --no-frozen-lockfile 
+      run: pnpm install --no-frozen-lockfile
 
     - name: Build project
-      # We skip strict testing for now just to get your build to pass
       run: pnpm run build --if-present
