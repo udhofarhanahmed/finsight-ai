@@ -1,5 +1,8 @@
 # FinSight AI - Financial Document Analysis Platform
 
+![Build Status](https://github.com/udhofarhanahmed/finsight-ai/actions/workflows/node.js.yml/badge.svg)
+
+
 **FinSight AI** is an intelligent financial document analysis platform that leverages artificial intelligence to extract, analyze, and visualize key financial metrics from PDF documents. Built for financial professionals, accountants, and business analysts who need to quickly extract insights from financial statements, reports, and documents.
 
 ## 🎯 Key Features
