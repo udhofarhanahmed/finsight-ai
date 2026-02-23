@@ -12,13 +12,13 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x, 22.x] # We will use the most stable modern versions
+        node-version: [20.x, 22.x]
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v4 # Updated to v4 for better compatibility
+      uses: pnpm/action-setup@v4
       with:
         version: 9
 
@@ -29,7 +29,7 @@ jobs:
         cache: 'pnpm'
 
     - name: Install dependencies
-      run: pnpm install
+      run: pnpm install --no-frozen-lockfile
 
     - name: Build project
       run: pnpm build
