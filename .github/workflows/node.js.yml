@@ -16,7 +16,7 @@ jobs:
     - name: Install pnpm
       uses: pnpm/action-setup@v4
       with:
-        # Leaving version empty lets it read v10.4.1 from your package.json automatically
+        # This allows GitHub to automatically use the v10.4.1 from your package.json
         run_install: false
 
     - name: Use Node.js 20
@@ -29,4 +29,11 @@ jobs:
       run: pnpm install --no-frozen-lockfile
 
     - name: Build project
-      run: pnpm run build --if-present
+      # We provide placeholder values so the TypeScript build doesn't fail
+      # while checking for these variables.
+      env:
+        DATABASE_URL: "mysql://localhost:3306/db"
+        BUILT_IN_FORGE_API_KEY: "placeholder_key"
+        VITE_APP_ID: "placeholder_id"
+        S3_ENDPOINT: "https://placeholder.com"
+      run: pnpm run build
