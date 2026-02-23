@@ -1,16 +1,35 @@
+name: Node.js CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x] # We will use the most stable modern versions
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Install pnpm
-      uses: pnpm/action-setup@v2
+      uses: pnpm/action-setup@v4 # Updated to v4 for better compatibility
       with:
-        version: 9 # Matches your local environment
-        
+        version: 9
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'pnpm' # Tells GitHub to cache pnpm files for speed
-        
-    - run: pnpm install
-    - run: pnpm build
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install
+
+    - name: Build project
+      run: pnpm build
