@@ -18,10 +18,24 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script
-      defer
-      src="%VITE_ANALYTICS_ENDPOINT%/umami"
-      data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"
-    ></script>
+    <script>
+      (function () {
+        var endpoint = "%VITE_ANALYTICS_ENDPOINT%";
+        var websiteId = "%VITE_ANALYTICS_WEBSITE_ID%";
+        var unresolved =
+          !endpoint ||
+          !websiteId ||
+          endpoint.includes("%VITE_") ||
+          websiteId.includes("%VITE_");
+
+        if (unresolved) return;
+
+        var script = document.createElement("script");
+        script.defer = true;
+        script.src = endpoint.replace(/\/$/, "") + "/umami";
+        script.dataset.websiteId = websiteId;
+        document.body.appendChild(script);
+      })();
+    </script>
   </body>
 </html>

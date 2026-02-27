@@ -42,6 +42,8 @@ A green build often means only “compile step succeeded.” Deployment can stil
 - Install-time script restrictions (e.g., `Ignored build scripts: esbuild`).
 - Pending/queued deployments masking an older failing job.
 
+- Optional analytics envs (`VITE_ANALYTICS_ENDPOINT`, `VITE_ANALYTICS_WEBSITE_ID`) are now safely ignored if unset, preventing client `TypeError: Invalid URL` crashes.
+
 ## 7) Validate deployment end-to-end
 
 - Open `/` and confirm UI loads (no source file text response).
