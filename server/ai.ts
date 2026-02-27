@@ -41,14 +41,18 @@ export async function extractTextFromPDF(pdfUrl: string): Promise<string> {
     return response.text;
   } catch (error) {
     console.error("Error extracting text from PDF:", error);
-    throw new Error(`Failed to extract text from PDF: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Failed to extract text from PDF: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
 /**
  * Generate an executive summary from extracted text
  */
-export async function generateExecutiveSummary(extractedText: string): Promise<string> {
+export async function generateExecutiveSummary(
+  extractedText: string,
+): Promise<string> {
   try {
     const response = await generateText({
       model: openai.chat("gpt-4"),
@@ -63,7 +67,9 @@ export async function generateExecutiveSummary(extractedText: string): Promise<s
     return response.text;
   } catch (error) {
     console.error("Error generating executive summary:", error);
-    throw new Error(`Failed to generate summary: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Failed to generate summary: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
@@ -71,8 +77,16 @@ export async function generateExecutiveSummary(extractedText: string): Promise<s
  * Extract financial metrics from text using structured prompting
  */
 export async function extractFinancialMetrics(
-  extractedText: string
-): Promise<Array<{ name: string; value: string; unit?: string; year?: string; confidence: number }>> {
+  extractedText: string,
+): Promise<
+  Array<{
+    name: string;
+    value: string;
+    unit?: string;
+    year?: string;
+    confidence: number;
+  }>
+> {
   try {
     const response = await generateText({
       model: openai.chat("gpt-4"),
@@ -100,7 +114,9 @@ Return ONLY valid JSON array, no other text.`,
     }
   } catch (error) {
     console.error("Error extracting financial metrics:", error);
-    throw new Error(`Failed to extract metrics: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Failed to extract metrics: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
@@ -125,6 +141,49 @@ ${extractedText}`,
     return response.text;
   } catch (error) {
     console.error("Error analyzing trends:", error);
-    throw new Error(`Failed to analyze trends: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Failed to analyze trends: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
+  }
+}
+
+export async function extractTextFromDocument(
+  fileUrl: string,
+  options: { mimeType?: string; fileName?: string } = {},
+): Promise<string> {
+  const mimeType = options.mimeType?.toLowerCase() ?? "application/pdf";
+  const promptByType =
+    mimeType === "text/csv"
+      ? "Extract and normalize structured tabular data from this CSV. Return readable plain text grouped by columns and notable values."
+      : mimeType.startsWith("image/")
+        ? "Perform OCR on this image and extract all visible text and numbers exactly."
+        : "Extract all text from this document and preserve structure so it can be used for financial analysis.";
+
+  try {
+    const response = await generateText({
+      model: openai.chat("gpt-4-vision"),
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `${promptByType}\nFile: ${options.fileName ?? "unknown"}`,
+            },
+            {
+              type: "image",
+              image: fileUrl,
+            },
+          ],
+        },
+      ],
+    });
+
+    return response.text;
+  } catch (error) {
+    console.error("Error extracting text from document:", error);
+    throw new Error(
+      `Failed to extract text from document: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
