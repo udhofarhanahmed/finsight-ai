@@ -14,10 +14,9 @@ import {
 } from "../db";
 import { storagePut, storageGet } from "../storage";
 import {
-  extractTextFromPDF,
+  extractTextFromDocument,
   generateExecutiveSummary,
   extractFinancialMetrics,
-  analyzeTrends,
 } from "../ai";
 import { notifyOwner } from "../_core/notification";
 import { nanoid } from "nanoid";
@@ -31,7 +30,8 @@ export const documentsRouter = router({
       z.object({
         fileName: z.string().min(1),
         fileData: z.instanceof(Buffer),
-      })
+        mimeType: z.string().optional().default("application/pdf"),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       try {
@@ -39,7 +39,11 @@ export const documentsRouter = router({
         const fileKey = `documents/${userId}/${nanoid()}-${input.fileName}`;
 
         // Upload to S3
-        const { url: fileUrl } = await storagePut(fileKey, input.fileData, "application/pdf");
+        const { url: fileUrl } = await storagePut(
+          fileKey,
+          input.fileData,
+          input.mimeType,
+        );
 
         // Create document record
         await createDocument(
@@ -47,7 +51,7 @@ export const documentsRouter = router({
           input.fileName,
           fileKey,
           fileUrl,
-          input.fileData.length
+          input.fileData.length,
         );
 
         // Notify owner of upload
@@ -102,7 +106,9 @@ export const documentsRouter = router({
         }
 
         const analysis = await getAnalysisByDocumentId(input.documentId);
-        const metrics = analysis ? await getMetricsByAnalysisId(analysis.id) : [];
+        const metrics = analysis
+          ? await getMetricsByAnalysisId(analysis.id)
+          : [];
 
         return {
           document,
@@ -140,7 +146,7 @@ export const documentsRouter = router({
 
         // Create analysis record
         await createAnalysis(input.documentId, ctx.user.id);
-        
+
         // Get the analysis record we just created
         const analysis = await getAnalysisByDocumentId(input.documentId);
         if (!analysis) {
@@ -152,11 +158,14 @@ export const documentsRouter = router({
           // Get presigned URL for the document
           const { url: presignedUrl } = await storageGet(document.fileKey);
 
-          // Extract text from PDF
-          const extractedText = await extractTextFromPDF(presignedUrl);
+          // Extract text from supported document types (PDF, images, CSV and other OCR-capable sources)
+          const extractedText = await extractTextFromDocument(presignedUrl, {
+            fileName: document.fileName,
+          });
 
           // Generate executive summary
-          const executiveSummary = await generateExecutiveSummary(extractedText);
+          const executiveSummary =
+            await generateExecutiveSummary(extractedText);
 
           // Extract financial metrics
           const metrics = await extractFinancialMetrics(extractedText);
@@ -179,7 +188,7 @@ export const documentsRouter = router({
               metric.value,
               metric.unit,
               metric.year,
-              metric.confidence
+              metric.confidence,
             );
           }
 
@@ -196,7 +205,9 @@ export const documentsRouter = router({
         } catch (analysisError) {
           // Handle analysis error
           const errorMessage =
-            analysisError instanceof Error ? analysisError.message : "Unknown error";
+            analysisError instanceof Error
+              ? analysisError.message
+              : "Unknown error";
 
           await updateAnalysis(analysisId, {
             analysisStatus: "failed",
