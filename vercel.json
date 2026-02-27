@@ -3,7 +3,6 @@
   "outputDirectory": "dist/public",
   "functions": {
     "api/index.ts": {
-      "runtime": "nodejs22.x",
       "maxDuration": 60
     }
   },
